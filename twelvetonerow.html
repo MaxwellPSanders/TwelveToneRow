@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head style="text-align: center;">
+	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+	<title>Twelve Tone Row Generator</title>
+	<h1>Twelve Tone Row Generator</h1>
+	<h3>(or spooky sound maker, whatever you prefer)
+	<br>For other projects of mine visit  
+		<a href="https://MaxEndeavors.com"> MaxEndeavors.com </a>
+	</h3>
+<script>
+
+var context = null;
+var usingWebAudio = true;
+
+if (typeof AudioContext !== 'undefined') {
+	context = new AudioContext();
+} else if (typeof webkitAudioContext !== 'undefined') {
+	context = new webkitAudioContext();
+} else {
+	usingWebAudio = false;
+}
+
+var playing = false;
+var osc = null;
+var freq = 440;
+var STEP_CONSTANT = Math.pow(2.0, 1.0/12.0);
+var beat = null;
+var timing = 1000;
+var notes = [220.000, 233.082 , 246.942 , 261.626 , 277.183 , 293.665 , 311.127 , 329.628 , 349.228 , 369.994 , 391.995 , 415.305];
+var row = [];
+var t = null;
+
+function resetRow(){
+	while(row.length != 12){
+		var x = Math.floor(Math.random()*12);	
+		if(!row.includes(x)){
+			row.push(x);
+		}
+	}
+	
+}
+
+function toggle() {
+	var button = document.getElementById("toggle");
+	if (playing && osc) {
+		playing = false;
+		osc.stop(0);
+		button.value = "Play";
+		row = [];
+		clearTimeout(t);
+	} else {
+		var i;
+		resetRow();
+		playing = true;
+		updateTimer(document.getElementById("timerText").value);
+		t = setTimeout(update,timing);
+		osc = context.createOscillator();
+		osc.connect(context.destination);
+		document.getElementById("freqText").value = "A";
+		document.getElementById("stream").innerHTML = " ";
+		osc.start(0);
+		button.value = "Stop";
+	}
+}
+
+
+
+function update() {
+	if((Math.random()*100) < document.getElementById("resting").value){	
+		var index = row.pop();
+		var note;
+		freq = notes[index];
+		if(row.length == 0){
+			resetRow();
+		}
+		if (playing) {
+			osc.frequency.value = freq;
+			tex = document.getElementById("stream").innerHTML 
+			t = setTimeout(update,timing);
+			switch(index){
+				case 0: note = "A"; break; 	
+				case 1: note = "A#"; break; 	
+				case 2: note = "B"; break; 	
+				case 3: note = "C"; break; 	
+				case 4: note = "C#"; break; 	
+				case 5: note = "D"; break; 	
+				case 6: note = "D#"; break; 	
+				case 7: note = "E"; break; 	
+				case 8: note = "F"; break; 	
+				case 9: note = "F#"; break; 	
+				case 10: note = "G"; break; 	
+				case 11: note = "G#"; break; 	
+			}
+			if(row.length == 12){
+				document.getElementById("stream").innerHTML = tex + note + " <br>";
+			}
+			else{
+				document.getElementById("stream").innerHTML = tex + note + " ";
+			
+			}
+		}
+		else{
+			clearTimeout(t)
+		}	
+		var text = document.getElementById("freqText").value = note;
+	}
+	else{
+		t = setTimeout(update,timing);
+	}
+}
+
+function updateTimer(newTimer) {
+	if(newTimer < 1){
+		newTimer = 1;
+	}	
+	else if(newTimer > 1000){
+		newTimer = 1000;
+	}
+
+	timing = 60000/newTimer;
+	var time = document.getElementById("timerText").value = newTimer;
+	var ran = document.getElementById("tempo").value = newTimer;
+}
+
+function square(){
+	if(osc){
+		osc.type = "square";
+	}
+}
+
+function sine(){
+	if(osc){
+		osc.type = "sine";
+	}
+}
+
+function sawtooth(){
+	if(osc){
+		osc.type = "sawtooth";
+	}
+}
+
+function triangle(){
+	if(osc){
+		osc.type = "triangle";
+	}
+}
+window.onload = function() {
+	if (!usingWebAudio) {
+		document.getElementById("audioControls").innerHTML = "<p>Web audio required.</p>";
+	}
+};
+
+</script>
+
+
+<body style="text-align: center;">
+
+	<div id="audioControls">
+		Tempo (BPM):
+		<input id="tempo" type="range" min="1" max="1000" value="60" oninput="updateTimer(this.value)"/>
+		<input id="timerText" type="number" value="60" oninput="updateTimer(this.value)"/>
+		<br>
+		Current Note:
+		<input id="toggle" type="button" value="Play" onclick="toggle()"/>
+		<input id="freqText" type="text" value="A" />
+		<br>
+		Wave Type:	
+		<input id="sine" type="button" value="Sine (Standard)" onclick="sine()"/>
+		<input id="square" type="button" value="Square" onclick="square()"/>
+		<input id="sawtooth" type="button" value="Sawtooth" onclick="sawtooth()"/>
+		<input id="triangle" type="button" value="Triangle" onclick="triangle()"/>
+		<br>
+		<label for="resting"> Chance to rest (100% resting - 100% changing)</label>
+		<input id="resting" type="range" min="0" max="100" value=100"/>
+
+	</div>
+	<p id="stream" style="text-align: center;"></p>
+</body>
+</html>
+
